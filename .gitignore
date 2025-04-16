@@ -1,5 +1,7 @@
 
 venv_ucd/
+venv/
+/venv_ucd
 /__pycache__/
 /.pytest_cache
 

@@ -64,3 +64,4 @@ if __name__ == "__main__":
                 upload_photo(file_path)
             except Exception as e:
                 print(f"Failed to upload {file_name}: {e}")
+
