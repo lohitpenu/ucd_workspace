@@ -1,0 +1,12 @@
+
+venv_ucd/
+/__pycache__/
+/.pytest_cache
+
+
+*.json
+*.log
+*.pkl
+*.pickle
+*.csv
+
