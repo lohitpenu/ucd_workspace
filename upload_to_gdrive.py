@@ -6,7 +6,7 @@ import os
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
 SERVICE_ACCOUNT_FILE = 'credentials.json'
-PARENT_FOLDER_ID = "1VJ4WWoZ_trILQRo6EcVqRnbHotNC_5ho"
+PARENT_FOLDER_ID = "XXXXXXXXXXXXX" # Google drive folder id will go here
 MAX_RETRIES = 3  # Number of retry attempts
 RETRY_DELAY = 5  # Delay between retries in seconds
 
@@ -56,7 +56,7 @@ def upload_photo(file_path):
 
 if __name__ == "__main__":
     # Example usage
-    folder_path = "/home/lohit/phd_workspace/stageOne_testSet"  # Replace with your folder path
+    folder_path = "/path/to/images"  # Replace with your folder path
     for file_name in os.listdir(folder_path):
         file_path = os.path.join(folder_path, file_name)
         if os.path.isfile(file_path):  # Ensure it's a file
