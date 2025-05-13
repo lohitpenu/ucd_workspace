@@ -5,63 +5,52 @@ import time
 import os
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
-SERVICE_ACCOUNT_FILE = 'credentials.json'
-PARENT_FOLDER_ID = "XXXXXXXXXXXXX" # Google drive folder id will go here
 MAX_RETRIES = 3  # Number of retry attempts
 RETRY_DELAY = 5  # Delay between retries in seconds
 
-def authenticate():
-    creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-    return creds
+class GoogleDriveUploader:
+    def __init__(self, service_account_file, parent_folder_id):
+        self.service_account_file = service_account_file
+        self.parent_folder_id = parent_folder_id
+        self.creds = self.authenticate()
+        self.service = build('drive', 'v3', credentials=self.creds)
 
-def upload_photo(file_path):
-    creds = authenticate()
-    service = build('drive', 'v3', credentials=creds)
+    def authenticate(self):
+        return Credentials.from_service_account_file(self.service_account_file, scopes=SCOPES)
 
-    file_name = file_path.split('/')[-1]  # Extract the file name from the path
+    def upload_photo(self, file_path):
+        file_name = os.path.basename(file_path)  # Extract the file name from the path
 
-    # Check if the file already exists in the Drive folder
-    query = f"'{PARENT_FOLDER_ID}' in parents and name = '{file_name}' and trashed = false"
-    try:
-        response = service.files().list(q=query, spaces='drive').execute()
-        if response.get('files', []):
-            print(f"File '{file_name}' already exists in Google Drive. Skipping upload.")
-            return
-    except HttpError as error:
-        print(f"Error checking if file exists: {error}")
-        raise
-
-    file_metadata = {
-        'name': file_name,
-        'mimeType': 'image/jpeg',  # Change this if you're uploading a different type of file
-        'parents': [PARENT_FOLDER_ID]
-    }
-
-    for attempt in range(MAX_RETRIES):
+        # Check if the file already exists in the Drive folder
+        query = f"'{self.parent_folder_id}' in parents and name = '{file_name}' and trashed = false"
         try:
-            file = service.files().create(
-                body=file_metadata,
-                media_body=file_path
-            ).execute()
-            print("File uploaded successfully.")
-            return file
+            response = self.service.files().list(q=query, spaces='drive').execute()
+            if response.get('files', []):
+                print(f"File '{file_name}' already exists in Google Drive. Skipping upload.")
+                return
         except HttpError as error:
-            print(f"Attempt {attempt + 1} failed: {error}")
-            if attempt < MAX_RETRIES - 1:
-                print(f"Retrying in {RETRY_DELAY} seconds...")
-                time.sleep(RETRY_DELAY)
-            else:
-                print("Max retries reached. Upload failed.")
-                raise
+            print(f"Error checking if file exists: {error}")
+            raise
 
-if __name__ == "__main__":
-    # Example usage
-    folder_path = "/path/to/images"  # Replace with your folder path
-    for file_name in os.listdir(folder_path):
-        file_path = os.path.join(folder_path, file_name)
-        if os.path.isfile(file_path):  # Ensure it's a file
+        file_metadata = {
+            'name': file_name,
+            'mimeType': 'image/jpeg',  # Change this if you're uploading a different type of file
+            'parents': [self.parent_folder_id]
+        }
+
+        for attempt in range(MAX_RETRIES):
             try:
-                upload_photo(file_path)
-            except Exception as e:
-                print(f"Failed to upload {file_name}: {e}")
-
+                file = self.service.files().create(
+                    body=file_metadata,
+                    media_body=file_path
+                ).execute()
+                print(f"File '{file_name}' uploaded successfully.")
+                return file
+            except HttpError as error:
+                print(f"Attempt {attempt + 1} failed: {error}")
+                if attempt < MAX_RETRIES - 1:
+                    print(f"Retrying in {RETRY_DELAY} seconds...")
+                    time.sleep(RETRY_DELAY)
+                else:
+                    print("Max retries reached. Upload failed.")
+                    raise

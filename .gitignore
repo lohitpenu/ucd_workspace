@@ -2,9 +2,12 @@
 venv_ucd/
 venv/
 /venv_ucd
+/Image_Capture/
 /__pycache__/
 /.pytest_cache
 
+
+/*.so
 
 /*.json
 /*.log
