@@ -1,0 +1,10 @@
+<h1>Google Drive Files</h1>
+<ul>
+  {% for file in files %}
+    <li>
+      {{ file.name }} ({{ file.mimeType }})
+      - <a href="{% url 'download_file' file.id %}">Download</a>
+      - <a href="{% url 'delete_file' file.id %}">Delete</a>
+    </li>
+  {% endfor %}
+</ul>

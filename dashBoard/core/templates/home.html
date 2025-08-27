@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Home</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+
+    <!-- Load Bootstrap CSS and JS from CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js" integrity="sha384-7qAoOXltbVP82dhxHAUje59V5r2YsVfBafyUDxEdApLPmcdhBPg1DKg1ERo0BZlK" crossorigin="anonymous"></script>
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdnjs.com/libraries/Chart.js"></script>
+    <!-- Load Simple DataTables CSS and JS from CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css" rel="stylesheet" type="text/css">
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest" type="text/javascript"></script>
+</head>
+<body>
+    <header class="bg-light p-3">
+        <h1 class="text-center">Welcome to the Dashboard</h1>
+        <nav class="text-center">
+            <ul class="list-inline">
+                <li class="list-inline-item"><a href="/">Home</a></li>
+                <li class="list-inline-item"><a href="/logout">Logout</a></li>
+                <li class="list-inline-item"><a href="/login">Drive Login</a></li>
+<!--                 <li class="list-inline-item"><a href="/profile">Profile</a></li>
+                <li class="list-inline-item"><a href="/settings">Settings</a></li>
+                <li class="list-inline-item"><a href="/logout">Logout</a></li> -->
+            </ul>
+        </nav>
+    </header> 
+    <main class="container mt-4">
+        <div class="row">
+            <!-- Container 1 -->
+            <div class="col-md-6 bg-light p-3 border">
+                <h3>Container 1</h3>
+                <p>Content for container 1.</p>
+
+            </div>
+            <!-- Container 2 -->
+            <div class="col-md-6 bg-light p-3 border">
+                <h3>Upload Request</h3>
+                <p>Manual Request to Process</p>   
+                <!-- Example HTML form for submitting an image URL -->
+                <form action="/process-image/" method="post">
+                    {% csrf_token %}
+                    <label for="image_url">Image URL:</label>
+                    <input type="text" id="image_url" name="image_url" required>
+                    <button type="submit">Process Image</button>
+                </form> 
+            </div>
+        </div>
+        <div class="row mt-3">
+            <!-- Container 3 -->
+            <div class="col-md-6 bg-light p-3 border">
+                <h3>Container 3</h3>
+                <p>Content for container 3.</p>
+                
+                <!-- Ensure the 'list_drive_files' URL is correctly mapped and the view is running -->
+                <!-- Ensure this template is rendered by Django and 'list_drive_files' is a valid URL name -->
+                <!-- Check that 'list_drive_files' is a valid Django URL and the view returns HTML -->
+           </div>
+            <!-- Container 4 (Date Range Selection) -->
+            <div class="col-md-6 bg-light p-3 border">
+                <h3>Date Range Selection</h3>
+                <form method="post" action="{% url 'drive_search' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="fromDate" class="form-label">From Date:</label>
+                        <input type="date" id="fromDate" name="fromDate" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="toDate" class="form-label">To Date:</label>
+                        <input type="date" id="toDate" name="toDate" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+        </div>
+    </main>
+    <footer class="text-center mt-4">
+        <p>&copy; 2023 Dashboard Inc. All rights reserved.</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Logged Out</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f8fa;
+            color: #333;
+            text-align: center;
+            padding-top: 80px;
+        }
+        .container {
+            background: #fff;
+            padding: 40px;
+            margin: auto;
+            width: 400px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #444;
+        }
+        a.button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            text-decoration: none;
+            background: #4CAF50;
+            color: white;
+            border-radius: 6px;
+            transition: background 0.3s;
+        }
+        a.button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>You have been logged out</h1>
+        <p>Thank you for using the application. Your session has ended.</p>
+        <a class="button" href="{% url 'home' %}">Log In Again</a>
+    </div>
+</body>
+</html>
