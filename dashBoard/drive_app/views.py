@@ -3,7 +3,8 @@ import pathlib
 import io
 import json, requests
 from django.http import JsonResponse, HttpResponse
-
+import time
+from googleapiclient.errors import HttpError
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
@@ -19,11 +20,29 @@ from .utils import upload_to_google_drive, ensure_drive_authenticated, process_i
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
+#added aug 26
+from google.auth.transport.requests import AuthorizedSession
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
 BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
 CREDENTIALS_FILE = os.path.join(BASE_DIR, 'credentials.json')
 REDIRECT_URI = 'http://localhost:8000/oauth2callback'
+IMG_FOLDER_ID = '1vay2G-mxxEV0JFX7G7seZMp1TSMHrDIo'  # Replace with your actual folder ID
+
+#added aug 26
+def get_drive_service(creds):
+    authed_session = AuthorizedSession(creds)
+    return build('drive', 'v3', credentials=creds, requestBuilder=authed_session.request)
+
+def safe_execute(request, retries=5):
+    for i in range(retries):
+        try:
+            return request.execute()
+        except (HttpError, OSError) as e:  # OSError covers gaierror
+            wait = 2 ** i
+            print(f"Drive API error: {e}, retrying in {wait}s")
+            time.sleep(wait)
+    raise Exception("Google Drive request failed after retries")
 
 
 def google_drive_auth(request):
@@ -100,8 +119,11 @@ def upload_file(request):
     if 'credentials' not in request.session:
         return redirect('google_drive_auth')
 
+    # creds = Credentials(**request.session['credentials'])
+    # service = build('drive', 'v3', credentials=creds)
+    #added aug 26
     creds = Credentials(**request.session['credentials'])
-    service = build('drive', 'v3', credentials=creds)
+    service = get_drive_service(creds)
 
     file_metadata = {'name': 'test.txt'}
     media = MediaFileUpload('test.txt', mimetype='text/plain')
@@ -126,8 +148,12 @@ def list_drive_files(request):
     if 'credentials' not in request.session:
         return render(request, 'drive_app/drive_not_connected.html')
 
+    # creds = Credentials(**request.session['credentials'])
+    # service = build('drive', 'v3', credentials=creds)
+    #added aug 26
     creds = Credentials(**request.session['credentials'])
-    service = build('drive', 'v3', credentials=creds)
+    service = get_drive_service(creds)
+
     results = service.files().list(pageSize=20, fields="files(id, name, mimeType)").execute()
     items = results.get('files', [])
     return render(request, 'drive_app/drive_list.html', {'files': items})
@@ -213,8 +239,11 @@ def download_file(request, file_id):
     if 'credentials' not in request.session:
         return redirect('google_drive_auth')
 
+    # creds = Credentials(**request.session['credentials'])
+    # service = build('drive', 'v3', credentials=creds)
+    #added aug 26
     creds = Credentials(**request.session['credentials'])
-    service = build('drive', 'v3', credentials=creds)
+    service = get_drive_service(creds)
 
     request_file = service.files().get_media(fileId=file_id)
     fh = io.BytesIO()
@@ -236,8 +265,11 @@ def delete_file(request, file_id):
     if 'credentials' not in request.session:
         return redirect('google_drive_auth')
 
+    # creds = Credentials(**request.session['credentials'])
+    # service = build('drive', 'v3', credentials=creds)
+    #added aug 26
     creds = Credentials(**request.session['credentials'])
-    service = build('drive', 'v3', credentials=creds)
+    service = get_drive_service(creds)
 
     service.files().delete(fileId=file_id).execute()
     return redirect('list_drive_files')
@@ -246,6 +278,7 @@ def delete_file(request, file_id):
 def drive_search(request):
     if 'credentials' not in request.session:
         return redirect('google_drive_auth')
+    cnt = 0  # Reset counter for each search
     
     if request.method == "POST":
         from_date = request.POST.get('fromDate')
@@ -258,20 +291,31 @@ def drive_search(request):
         to_date_str = f"{to_date}T23:59:59" if to_date else None
 
         query_parts = []
+        query_parts.append(f"'{IMG_FOLDER_ID}' in parents")
         if from_date_str:
             query_parts.append(f"modifiedTime >= '{from_date_str}'")
         if to_date_str:
             query_parts.append(f"modifiedTime <= '{to_date_str}'")
         query = " and ".join(query_parts) if query_parts else None
 
-        results = service.files().list(
-            q=query,
-            pageSize=1000,
-            fields="files(id, name, mimeType, modifiedTime, webContentLink)",
-            supportsAllDrives=True,
-            includeItemsFromAllDrives=True,
-            corpora='allDrives'
-        ).execute()
+        # results = service.files().list(
+        #     q=query,
+        #     pageSize=20,
+        #     fields="files(id, name, mimeType, modifiedTime, webContentLink)",
+        #     supportsAllDrives=True,
+        #     includeItemsFromAllDrives=True,
+        #     corpora='allDrives'
+        # ).execute()
+        results = safe_execute(
+            service.files().list(
+                q=query,
+                pageSize=20,
+                fields="files(id, name, mimeType, modifiedTime, webContentLink)",
+                supportsAllDrives=True,
+                includeItemsFromAllDrives=True,
+                corpora='allDrives'
+            )
+        )
 
         items = results.get('files', [])
         items.sort(key=lambda x: x['name'])  # Sort by name
@@ -286,13 +330,19 @@ def drive_search(request):
             return JsonResponse({'error': 'Failed to reset the image processing service.'}, status=500)
         else:
             print("Image processing service reset successfully.")  
-            
+
         # Download images locally
         local_files = []
+        imgCnt = sum(1 for file in items if file.get('mimeType', '').startswith('image/'))
         for file in items:
             if file['mimeType'].startswith('image/'):
+                cnt = cnt + 1
+                if cnt == imgCnt:
+                    last = True
+                else:
+                    last = False
                 local_path = os.path.join(settings.MEDIA_ROOT, file['name'])
-                result = process_image_and_upload(request.session['credentials'], file['webContentLink'], imgName=file['name'])
+                result = process_image_and_upload(request.session['credentials'], file['webContentLink'], imgName=file['name'], last=last)
                 if 'file_id' in result:
                     print(f"Image {file['name']} processed and uploaded with ID: {result['file_id']}")
                 # Avoid downloading if already exists

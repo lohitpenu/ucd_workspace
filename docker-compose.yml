@@ -1,0 +1,17 @@
+services:
+  web:
+    build: 
+      context: ./dashBoard
+      dockerfile: Dockerfile
+    ports:
+      - '8000:8000'
+    volumes:
+      - ./dashBoard:/app/dashBoard
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+networks:
+  default:
+    driver: bridge
+    enable_ipv6: false

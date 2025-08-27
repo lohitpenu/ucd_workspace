@@ -1,10 +1,17 @@
 # drive_app/utils.py
 import io, requests
+import os
+import zipfile
+from django.contrib import messages
+
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 from google.oauth2.credentials import Credentials
 from django.shortcuts import redirect
+from django.conf import settings
 from django.http import JsonResponse
+
+from django.conf import settings
 
 # def upload_to_google_drive(credentials_dict, file_name, file_stream, mime_type):
 #     creds = Credentials(**credentials_dict)
@@ -39,7 +46,7 @@ def upload_to_google_drive(credentials_dict, file_name, file_stream, mime_type, 
 
 
 
-def process_image_and_upload(credentials_dict, image_url, imgName=None):
+def process_image_and_upload(credentials_dict, image_url, imgName=None, last=False):
     """
     Calls the external image processing API, uploads the resulting ZIP to Drive,
     and returns (message, file_id, drive_link).
@@ -48,7 +55,10 @@ def process_image_and_upload(credentials_dict, image_url, imgName=None):
     files = {'url': (None, image_url)}
     headers = {'accept': 'application/json, application/zip'}
 
-    response = requests.post(url, headers=headers, files=files, stream=True)
+    response = requests.post(url, headers=headers, files=files, timeout=30)
+    if response.status_code != 200:
+        return redirect('list_drive_files')  # Redirect to list files if error
+
     response.raise_for_status()
     content_type = response.headers.get('content-type')
 
@@ -70,6 +80,25 @@ def process_image_and_upload(credentials_dict, image_url, imgName=None):
             "application/zip",
             folder_id="1bXPYVbXAMqcfEX1kqPWOOlpc2itG5pmh"
         )
+
+        if last:
+        # Reset buffer for extraction
+            zip_buffer.seek(0)
+            saved_files = []
+
+            # Create a subfolder inside MEDIA_ROOT for this job
+            save_dir = os.path.join(settings.MEDIA_ROOT, "processed", "last_csv")
+            os.makedirs(save_dir, exist_ok=True)
+
+            with zipfile.ZipFile(zip_buffer, "r") as zf:
+                for file_name in zf.namelist():
+                    if file_name.endswith(".csv"):
+                        extracted_path = os.path.join(save_dir, file_name)
+                        zf.extract(file_name, save_dir)
+                        saved_files.append(
+                            os.path.relpath(extracted_path, settings.MEDIA_ROOT)  # relative path for serving
+                        )
+
         return {
             'message': 'ZIP uploaded to Google Drive successfully.',
             'file_id': file_id,

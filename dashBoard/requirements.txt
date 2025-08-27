@@ -1,0 +1,25 @@
+# Django & related
+Django>=4.2,<5.0
+#gunicorn>=21.2.0
+#whitenoise>=6.6.0
+
+# Google API client for Drive
+google-api-python-client>=2.148.0
+google-auth>=2.35.0
+google-auth-httplib2>=0.2.0
+google-auth-oauthlib>=1.2.1
+
+# HTTP requests
+requests>=2.32.3
+
+# Data & plotting
+pandas>=2.2.3
+matplotlib>=3.9.2
+numpy>=2.0.0
+
+# For forms handling
+#django-crispy-forms>=2.2
+
+# Production essentials
+psycopg2-binary>=2.9.9   # if you use PostgreSQL (recommended for DigitalOcean)
+python-dotenv>=1.0.1     # load env vars if needed
